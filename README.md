@@ -1,4 +1,4 @@
-# cbZUGFeRD
+# cbZUGFeRD v1.1.0
 
 A ColdBox module for generating ZUGFeRD/XRechnung compliant invoices in ColdFusion (CFML).
 
@@ -10,7 +10,7 @@ ZUGFeRD (Zentraler User Guide des Forums elektronische Rechnung Deutschland) is 
 
 - Generate ZUGFeRD compliant PDF invoices with embedded XML data
 - Based on the [Mustang Project](https://www.mustangproject.org/) Java library
-- Support for PDF/A-3b conversion via Gotenberg
+- **No external services required** - PDF/A conversion handled by Mustang library
 - Easy integration with ColdBox applications
 - Full support for:
   - Invoice metadata (numbers, dates, notes)
@@ -24,8 +24,6 @@ ZUGFeRD (Zentraler User Guide des Forums elektronische Rechnung Deutschland) is 
 
 - ColdBox framework
 - Java (the module uses JavaLoader to load the Mustang Project library)
-- [Gotenberg](https://gotenberg.dev/) server (for PDF/A conversion)
-  - Run via Docker: `docker run --rm -p 3000:3000 gotenberg/gotenberg:8`
 - cbJavaLoader module
 
 ## Installation
@@ -57,25 +55,97 @@ moduleSettings = {
 
 ## Usage
 
-The module provides an example implementation in `handlers/Home.cfc` that demonstrates:
+The module uses a **factory pattern** to create ZUGFeRD objects. This approach properly handles WireBox dependency injection timing with JavaLoader.
 
-1. Creating invoice metadata (dates, numbers, notes)
-2. Setting up sender and recipient information
-3. Adding invoice line items
-4. Converting a regular PDF to PDF/A-3b format
-5. Embedding ZUGFeRD XML data into the PDF
-6. Exporting the final compliant invoice
+### Quick Start
 
-### Example
+```cfc
+// Get the factory (singleton)
+var factory = getInstance('MustangFactory@cbzugferd');
 
-See `handlers/Home.cfc` for a complete working example with dummy data. The example shows how to:
+// Create an invoice
+var invoice = factory.createInvoice();
 
-- Initialize invoice objects
-- Set sender/recipient trade party information
-- Add products and line items
-- Configure bank details
-- Generate and convert PDFs
-- Create the final ZUGFeRD compliant invoice
+// Create trade parties (name, street, ZIP, location, country)
+var sender = factory.createTradeParty("My Company", "Main Street 1", "12345", "Berlin", "DE");
+sender.addVATID("DE123456789");
+
+var recipient = factory.createTradeParty("Customer Inc", "Customer Road 5", "54321", "Munich", "DE");
+recipient.addVATID("DE987654321");
+
+// Set invoice details
+invoice.setDueDate(now())
+    .setIssueDate(now())
+    .setDeliveryDate(now())
+    .setSender(sender)
+    .setRecipient(recipient)
+    .setOwnTaxID("4711")
+    .setReferenceNumber("INV-2024-001")
+    .setNumber("2024-001");
+
+// Create product (description, name, unit, VATPercent)
+var product = factory.createProduct("Widget Description", "Widget", "C62", 19);
+
+// Create item (product, price, quantity)
+var item = factory.createItem(product, 99.99, 2);
+invoice.addItem(item);
+
+// Generate your PDF (e.g., with cfdocument)
+cfdocument(format="PDF" name="pdfContent") {
+    writeOutput('<h1>Invoice</h1>...');
+}
+fileWrite("/path/to/invoice.pdf", pdfContent);
+
+// Create ZUGFeRD PDF with embedded XML
+var exporter = factory.createExporterFromA1()
+    .ignorePDFAErrors()  // Allows regular PDF input (not just PDF/A-1)
+    .load("/path/to/invoice.pdf")
+    .setProducer("My Application")
+    .setCreator("cbZUGFeRD");
+
+exporter.setTransaction(invoice);
+exporter.export("/path/to/zugferd-invoice.pdf");
+```
+
+### Factory Methods
+
+The `MustangFactory` provides these methods:
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `createInvoice()` | none | Creates a new Invoice object |
+| `createTradeParty()` | name, street, ZIP, location, country | Creates a trade party (sender/recipient) |
+| `createProduct()` | description, name, unit, VATPercent | Creates a product |
+| `createItem()` | product, price, quantity | Creates a line item |
+| `createExporterFromA1()` | none | Creates exporter for PDF/A-1 input (use with `.ignorePDFAErrors()` for regular PDF) |
+| `createExporterFromA3()` | none | Creates exporter for PDF/A-3 input |
+
+### Trade Party Methods
+
+After creating a trade party, you can chain these methods:
+
+- `.addVATID(string)` - Add VAT ID
+- `.addTaxID(string)` - Add Tax ID
+- `.setEmail(string)` - Set email address
+- `.setID(string)` - Set organization ID
+- `.setContact(contact)` - Set contact person
+- `.addBankDetails(bankDetails)` - Add bank details
+
+### Invoice Methods
+
+- `.setNumber(string)` - Invoice number
+- `.setIssueDate(date)` - Issue date
+- `.setDueDate(date)` - Due date
+- `.setDeliveryDate(date)` - Delivery date
+- `.setSender(tradeParty)` - Sender/seller
+- `.setRecipient(tradeParty)` - Recipient/buyer
+- `.setOwnTaxID(string)` - Your tax ID
+- `.setReferenceNumber(string)` - Reference number
+- `.addItem(item)` - Add line item
+
+## Example Handler
+
+See `handlers/Test.cfc` for a complete working example.
 
 ## Validation
 
@@ -90,7 +160,21 @@ You can validate your generated ZUGFeRD invoices using these online validators:
 - [Mustang Project](https://www.mustangproject.org/)
 - [Mustang Project Usage Guide](https://www.mustangproject.org/use/#xrechnung)
 - [ZUGFeRD Official Website](https://www.ferd-net.de/zugferd/index.html)
-- [Gotenberg Documentation](https://gotenberg.dev/)
+
+## Version History
+
+### v1.1.0
+- **Breaking Change**: Switched to factory pattern (`MustangFactory`) for creating Java objects
+- **Removed**: Gotenberg/Docker dependency - no longer needed for PDF/A conversion
+- Uses `ZUGFeRDExporterFromA1` with `ignorePDFAErrors()` to handle regular PDFs
+- Simplified API - all object creation through single factory singleton
+- Updated documentation with complete usage examples
+
+### v1.0.0
+- Initial release
+- ZUGFeRD invoice generation using Mustang Project library
+- Required Gotenberg Docker container for PDF/A-3b conversion
+- Individual model CFCs for each Java class wrapper
 
 ## License
 
@@ -98,4 +182,4 @@ Please refer to the Mustang Project license for the underlying Java library.
 
 ## Notes
 
-This module is designed to be integrated into your existing ColdBox application. Replace the dummy data in the example handler with your own invoice data from your database or business logic.
+This module is designed to be integrated into your existing ColdBox application. Replace the example data in the test handler with your own invoice data from your database or business logic.

@@ -42,9 +42,9 @@ component {
 
 	// Module Properties
 	this.title              = "cbZUGFeRD";
-	this.author             = "";
-	this.webURL             = "";
-	this.description        = "";
+	this.author             = "Gunnar Lieb";
+	this.webURL             = "https://github.com/akitogo/cbZUGFeRD";
+	this.description        = "A Coldfusion Coldbox wrapper for ZUGFeRD using mustangproject";
 	this.version            = "1.0.0";
 	// If true, looks for views in the parent first, if not found, then in the module. Else vice-versa
 	this.viewParentLookup   = true;

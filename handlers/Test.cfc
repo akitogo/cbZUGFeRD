@@ -1,75 +1,68 @@
 /**
- * PdfA1A generation
+ * ZUGFeRD Invoice Generation Example
  */
-component{
+component {
 
-	/**
-	 * use existing PDF, attach some data, save it as PdfA1A
-	 */
-	function index( event, rc, prc ){
-		var sourcePDF = '/sampledir/modules/cbZUGFeRD/tmp/test.pdf';
-		var outputFolder = '/sampledir/modules/cbZUGFeRD/tmp/';
-		//var iZe = ze.init();
-		var test = {};
-		var resPdf = '';
+    /**
+     * Generate a ZUGFeRD compliant PDF invoice
+     */
+    function index(event, rc, prc) {
+        var sourcePDF = expandPath('/modules/cbZUGFeRD/tmp/test.pdf');
+        var outputFolder = expandPath('/modules/cbZUGFeRD/tmp/');
 
-		// how to create an invoice
-		// https://www.mustangproject.org/use/#xrechnung
-		var invoice 	= getInstance('invoice@cbzugferd').init();
-		var tradeParty 	= getInstance('tradeparty@cbzugferd').init("testfirma","teststr", "55232", "teststadt", "DE");
-		tradeParty.addVATID("DE0815");
+        // Get the factory (singleton that handles all Java object creation)
+        var factory = getInstance('MustangFactory@cbzugferd');
 
-		var Recipient 	= getInstance('tradeparty@cbzugferd').init("testfirmaRecipient","teststr", "55232", "teststadt", "DE");
-		Recipient.addVATID("DE0815");
+        // Create invoice
+        var invoice = factory.createInvoice();
 
-		invoice.setDueDate( now() ).setIssueDate(now()).setDeliveryDate(now());
+        // Create sender trade party (name, street, ZIP, location, country)
+        var tradeParty = factory.createTradeParty("testfirma", "teststr", "55232", "teststadt", "DE");
+        tradeParty.addVATID("DE0815");
 
-		invoice.setSender(tradeParty);
-		invoice.setRecipient(Recipient);
-		invoice.setOwnTaxID("4711");
+        // Create recipient trade party
+        var Recipient = factory.createTradeParty("testfirmaRecipient", "teststr", "55232", "teststadt", "DE");
+        Recipient.addVATID("DE0815");
 
-		invoice.setReferenceNumber("991-01484-64");
-		var product 	= getInstance('product@cbzugferd').init("Testprodukt", "", "C62", javaCast("BigDecimal",0) );
-		var item 		= getInstance('item@cbzugferd').init(product, javaCast("BigDecimal",1),javaCast("BigDecimal",1) );
+        // Set invoice dates and parties
+        invoice.setDueDate(now()).setIssueDate(now()).setDeliveryDate(now());
+        invoice.setSender(tradeParty);
+        invoice.setRecipient(Recipient);
+        invoice.setOwnTaxID("4711");
+        invoice.setReferenceNumber("991-01484-64");
 
-		invoice.setNumber("123").addItem(item);
+        // Create product and item (description, name, unit, VATPercent)
+        var product = factory.createProduct("Testprodukt", "", "C62", 0);
+        // Create item (product, price, quantity)
+        var item = factory.createItem(product, 1, 1);
+        invoice.setNumber("123").addItem(item);
 
-		// create random pdf
-		cfdocument(format="PDF" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true"){
-			writeOutput('<h1>Überschrift #now()#</h1>')
-		}
+        // Create PDF with cfdocument
+        var test = {};
+        cfdocument(format="PDF" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true") {
+            writeOutput('<h1>Überschrift #now()#</h1>');
+        }
 
-		// send created pdf to docker container of gotenberg
-		// https://gotenberg.dev/docs/routes#convert-into-pdfa--pdfua-route
-		// run docker container:
-		// docker run --rm -p 3000:3000 gotenberg/gotenberg:8
-		//
-		cfhttp( method="post" url="http://localhost:3000/forms/pdfengines/convert" multipart="true" result="resPdf") {
-			cfhttpparam(type="file" name="files" file="#sourcePDF#");
-			cfhttpparam(type="formfield" name="pdfa" value="PDF/A-3b");
-			cfhttpparam(type="formfield" name="pdfua" value="true");
-		}
+        // Save the PDF file
+        fileWrite(sourcePDF, test);
 
-		//var c = converter.init(sourcePDF);
-		//dump(spreof); abort;
-		//c.toPdfA1A( outputFolder & "toPdfA1A.pdf" );
+        // Use ZUGFeRDExporterFromA1 with ignorePDFAErrors to handle regular PDF
+        // This converts the PDF and embeds the ZUGFeRD XML data
+        var iZe = factory.createExporterFromA1()
+            .ignorePDFAErrors()
+            .load(sourcePDF)
+            .setProducer("My Application")
+            .setCreator("cbZugferd");
+        iZe.setTransaction(invoice);
+        iZe.export(outputFolder & "final.pdf");
 
-		fileWrite(outputFolder& "toPdfA1A.pdf",resPdf.fileContent);
+        // Validate your generated ZUGFeRD invoice here:
+        // https://www.portinvoice.com/
+        // https://validool.org/valitool-validierung-von-e-rechnungen-en16931-zugferd-xrechnung-order-desadv/
+        // https://easyfirma.net/e-rechnung/zugferd/validatoren
 
-		var iZe = getInstance('exporter@cbzugferd').init();
-		dump(iZe);
-		iZe.load(outputFolder & "toPdfA1A.pdf").setProducer("My Application").setCreator("cbZugferd");
-		iZe.setTransaction(invoice);
-		iZe.export(outputFolder & "final.pdf");
-
-		// validate pdf here
-		// https://www.portinvoice.com/
-		// as well see here 
-		// https://easyfirma.net/e-rechnung/zugferd/validatoren
-		// https://validool.org/valitool-validierung-von-e-rechnungen-en16931-zugferd-xrechnung-order-desadv/
-		
-		dump(var=iZe,top=3); abort;
-		event.setView( "home/index" );
-	}
+        dump(var=iZe, top=3); abort;
+        event.setView("home/index");
+    }
 
 }

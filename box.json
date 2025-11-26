@@ -1,0 +1,63 @@
+{
+    "author":"Gunnar Lieb",
+    "bugs":"https://github.com/akitogo/cbZUGFeRD/issues",
+    "changelog":"",
+    "contributors":[],
+    "dependencies":{
+        "cbjavaloader":"*"
+    },
+    "description":"A Coldfusion Coldbox wrapper for ZUGFeRD using mustangproject",
+    "devDependencies":{},
+    "documentation":"",
+    "homepage":"https://github.com/akitogo/cbZUGFeRD",
+    "ignore":[
+        "**/.*",
+        "/test/",
+        "/tests/"
+    ],
+    "installPaths":{},
+    "instructions":"",
+    "keywords":["zugferd","invoice","pdf","coldbox","module"],
+    "license":[
+        {
+            "type":"",
+            "URL":""
+        }
+    ],
+    "location":"ForgeboxStorage",
+    "name":"cbZUGFeRD",
+    "private":false,
+    "projectURL":"https://github.com/akitogo/cbZUGFeRD",
+    "reinitWatchDelay":500,
+    "reinitWatchDirectory":"",
+    "reinitWatchPaths":"",
+    "repository":{
+        "type":"git",
+        "URL":"https://github.com/akitogo/cbZUGFeRD"
+    },
+    "scripts":{},
+    "shortDescription":"A Coldfusion Coldbox wrapper for ZUGFeRD using mustangproject",
+    "slug":"cbzugferd",
+    "testbox":{
+        "bundles":"",
+        "directory":"tests.specs",
+        "excludes":"",
+        "labels":"",
+        "options":{},
+        "recurse":true,
+        "reporter":"",
+        "runner":[
+            {
+                "default":""
+            }
+        ],
+        "testBundles":"",
+        "testSpecs":"",
+        "testSuites":"",
+        "verbose":true,
+        "watchDelay":500,
+        "watchPaths":"**.cfc"
+    },
+    "type":"modules",
+    "version":"1.1.0"
+}
