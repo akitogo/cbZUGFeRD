@@ -1,4 +1,4 @@
-# cbZUGFeRD v1.1.0
+# cbZUGFeRD v1.1.1
 
 A ColdBox module for generating ZUGFeRD/XRechnung compliant invoices in ColdFusion (CFML).
 
@@ -117,6 +117,8 @@ The `MustangFactory` provides these methods:
 | `createTradeParty()` | name, street, ZIP, location, country | Creates a trade party (sender/recipient) |
 | `createProduct()` | description, name, unit, VATPercent | Creates a product |
 | `createItem()` | product, price, quantity | Creates a line item |
+| `createBankDetails()` | IBAN, BIC | Creates bank details for payment |
+| `createContact()` | name, phone, email | Creates a contact person |
 | `createExporterFromA1()` | none | Creates exporter for PDF/A-1 input (use with `.ignorePDFAErrors()` for regular PDF) |
 | `createExporterFromA3()` | none | Creates exporter for PDF/A-3 input |
 
@@ -155,6 +157,24 @@ You can validate your generated ZUGFeRD invoices using these online validators:
 - [Validool](https://validool.org/valitool-validierung-von-e-rechnungen-en16931-zugferd-xrechnung-order-desadv/)
 - [easyfirma validators](https://easyfirma.net/e-rechnung/zugferd/validatoren)
 
+### Known Validation Issues
+
+**Font Embedding Error**: When using `cfdocument` to generate PDFs, you may receive a validation error:
+
+> "Das Schriftprogramm ist nicht eingebettet" (The font program is not embedded)
+
+This occurs because Lucee's `cfdocument` does not properly embed fonts for full PDF/A-3 compliance, even with `fontembed="true"`.
+
+**Important**: The ZUGFeRD XML data is still valid and the invoice will be accepted according to German VAT legislation ("Die E-Rechnung entspricht den Vorgaben der deutschen USt-Gesetzgebung"). Only the PDF container is not fully PDF/A compliant.
+
+**Solutions**:
+1. **Use a professional PDF generator** - If your invoices come from a proper PDF library (wkhtmltopdf, PDFBox, iText, etc.) with embedded fonts, this issue won't occur
+2. **Use Gotenberg** - For full PDF/A compliance, you can use [Gotenberg](https://gotenberg.dev/) to convert PDFs before processing:
+   ```
+   docker run --rm -p 3000:3000 gotenberg/gotenberg:8
+   ```
+3. **Accept the warning** - For many use cases, the valid XML is sufficient and the PDF font warning can be ignored
+
 ## Resources
 
 - [Mustang Project](https://www.mustangproject.org/)
@@ -162,6 +182,10 @@ You can validate your generated ZUGFeRD invoices using these online validators:
 - [ZUGFeRD Official Website](https://www.ferd-net.de/zugferd/index.html)
 
 ## Version History
+
+### v1.1.1
+- Added `createBankDetails()` factory method for payment information
+- Added `createContact()` factory method for contact persons
 
 ### v1.1.0
 - **Breaking Change**: Switched to factory pattern (`MustangFactory`) for creating Java objects

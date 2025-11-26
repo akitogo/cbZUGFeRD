@@ -18,11 +18,16 @@ component {
 
         // Create sender trade party (name, street, ZIP, location, country)
         var tradeParty = factory.createTradeParty("testfirma", "teststr", "55232", "teststadt", "DE");
-        tradeParty.addVATID("DE0815");
+        tradeParty.addVATID("DE123456789");  // Valid format: DE + 9 digits
+
+        // Add bank details to sender
+        var bankDetails = factory.createBankDetails("DE89370400440532013000", "COBADEFFXXX");
+        bankDetails.setAccountName("testfirma");
+        tradeParty.addBankDetails(bankDetails);
 
         // Create recipient trade party
         var Recipient = factory.createTradeParty("testfirmaRecipient", "teststr", "55232", "teststadt", "DE");
-        Recipient.addVATID("DE0815");
+        Recipient.addVATID("DE987654321");  // Valid format: DE + 9 digits
 
         // Set invoice dates and parties
         invoice.setDueDate(now()).setIssueDate(now()).setDeliveryDate(now());
@@ -31,16 +36,22 @@ component {
         invoice.setOwnTaxID("4711");
         invoice.setReferenceNumber("991-01484-64");
 
+        // Add regulatory notes (Geschäftsführer, Handelsregister) - uses SubjectCode REG
+        invoice.addRegulatoryNote("Geschäftsführer: Max Mustermann");
+        invoice.addRegulatoryNote("Handelsregister: Amtsgericht Musterstadt HRB 12345");
+
         // Create product and item (description, name, unit, VATPercent)
         var product = factory.createProduct("Testprodukt", "", "C62", 0);
         // Create item (product, price, quantity)
         var item = factory.createItem(product, 1, 1);
         invoice.setNumber("123").addItem(item);
 
-        // Create PDF with cfdocument
+        // Create PDF with cfdocument - use fontembed="true" for PDF/A compliance
         var test = {};
-        cfdocument(format="PDF" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true") {
+        cfdocument(format="PDF" fontembed="true" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true") {
+            writeOutput('<html><head><style>body { font-family: Helvetica, Arial, sans-serif; }</style></head><body>');
             writeOutput('<h1>Überschrift #now()#</h1>');
+            writeOutput('</body></html>');
         }
 
         // Save the PDF file

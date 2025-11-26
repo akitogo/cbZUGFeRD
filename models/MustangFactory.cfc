@@ -1,8 +1,10 @@
 component singleton {
-    property name="TradePartyClass"   inject="javaloader:org.mustangproject.TradeParty";
-    property name="ProductClass"      inject="javaloader:org.mustangproject.Product";
-    property name="ItemClass"         inject="javaloader:org.mustangproject.Item";
-    property name="InvoiceClass"      inject="javaloader:org.mustangproject.Invoice";
+    property name="TradePartyClass"      inject="javaloader:org.mustangproject.TradeParty";
+    property name="ProductClass"         inject="javaloader:org.mustangproject.Product";
+    property name="ItemClass"            inject="javaloader:org.mustangproject.Item";
+    property name="InvoiceClass"         inject="javaloader:org.mustangproject.Invoice";
+    property name="BankDetailsClass"     inject="javaloader:org.mustangproject.BankDetails";
+    property name="ContactClass"         inject="javaloader:org.mustangproject.Contact";
     property name="ExporterFromA3Class"  inject="javaloader:org.mustangproject.ZUGFeRD.ZUGFeRDExporterFromA3";
     property name="ExporterFromA1Class"  inject="javaloader:org.mustangproject.ZUGFeRD.ZUGFeRDExporterFromA1";
 
@@ -20,6 +22,14 @@ component singleton {
 
     function createInvoice() {
         return InvoiceClass.init();
+    }
+
+    function createBankDetails(IBAN, BIC) {
+        return BankDetailsClass.init(arguments.IBAN, arguments.BIC);
+    }
+
+    function createContact(name, phone = "", email = "") {
+        return ContactClass.init(arguments.name, arguments.phone, arguments.email);
     }
 
     function createExporterFromA3() {
