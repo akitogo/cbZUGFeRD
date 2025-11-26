@@ -46,10 +46,12 @@ component {
         var item = factory.createItem(product, 1, 1);
         invoice.setNumber("123").addItem(item);
 
-        // Create PDF with cfdocument - use fontembed="true" for PDF/A compliance
+        // Create PDF with cfdocument - use modern (Flying Saucer) engine with fontembed
+        // Font must be TTF and referenced by exact name from the TTF file
+        // See: https://github.com/lucee/extension-pdf/blob/master/source/java/src/org/lucee/extension/pdf/xhtmlrenderer/FSPDFDocument.java
         var test = {};
-        cfdocument(format="PDF" fontembed="true" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true") {
-            writeOutput('<html><head><style>body { font-family: Helvetica, Arial, sans-serif; }</style></head><body>');
+        cfdocument(format="PDF" fontembed="true" fontdirectory="/System/Library/Fonts/Supplemental/" type="modern" page="#{width: 21, height: 29.7, type:'A4'}#" unit="cm" margin="0" name="test" overwrite="true") {
+            writeOutput('<html><head><style>body { font-family: Arial, sans-serif; }</style></head><body>');
             writeOutput('<h1>Überschrift #now()#</h1>');
             writeOutput('</body></html>');
         }

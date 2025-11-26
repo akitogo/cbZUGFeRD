@@ -1,4 +1,4 @@
-# cbZUGFeRD v1.1.1
+# cbZUGFeRD v1.1.2
 
 A ColdBox module for generating ZUGFeRD/XRechnung compliant invoices in ColdFusion (CFML).
 
@@ -157,23 +157,33 @@ You can validate your generated ZUGFeRD invoices using these online validators:
 - [Validool](https://validool.org/valitool-validierung-von-e-rechnungen-en16931-zugferd-xrechnung-order-desadv/)
 - [easyfirma validators](https://easyfirma.net/e-rechnung/zugferd/validatoren)
 
-### Known Validation Issues
+### Font Embedding for PDF/A Compliance
 
-**Font Embedding Error**: When using `cfdocument` to generate PDFs, you may receive a validation error:
+To properly embed fonts in PDFs generated with `cfdocument`, you must:
 
-> "Das Schriftprogramm ist nicht eingebettet" (The font program is not embedded)
+1. Use `type="modern"` (Flying Saucer engine)
+2. Set `fontembed="true"`
+3. Specify `fontdirectory` pointing to a folder containing TTF font files
+4. Reference the font by its exact name in CSS
 
-This occurs because Lucee's `cfdocument` does not properly embed fonts for full PDF/A-3 compliance, even with `fontembed="true"`.
+**Example:**
+```cfc
+cfdocument(
+    format="PDF"
+    fontembed="true"
+    fontdirectory="/System/Library/Fonts/Supplemental/"
+    type="modern"
+    name="pdfContent"
+) {
+    writeOutput('<html><head>');
+    writeOutput('<style>body { font-family: Arial, sans-serif; }</style>');
+    writeOutput('</head><body>...');
+}
+```
 
-**Important**: The ZUGFeRD XML data is still valid and the invoice will be accepted according to German VAT legislation ("Die E-Rechnung entspricht den Vorgaben der deutschen USt-Gesetzgebung"). Only the PDF container is not fully PDF/A compliant.
+**Note:** On macOS, TTF fonts are typically located in `/System/Library/Fonts/Supplemental/`. On Linux/Windows servers, adjust the path accordingly (e.g., `/usr/share/fonts/truetype/` on Ubuntu).
 
-**Solutions**:
-1. **Use a professional PDF generator** - If your invoices come from a proper PDF library (wkhtmltopdf, PDFBox, iText, etc.) with embedded fonts, this issue won't occur
-2. **Use Gotenberg** - For full PDF/A compliance, you can use [Gotenberg](https://gotenberg.dev/) to convert PDFs before processing:
-   ```
-   docker run --rm -p 3000:3000 gotenberg/gotenberg:8
-   ```
-3. **Accept the warning** - For many use cases, the valid XML is sufficient and the PDF font warning can be ignored
+See [Lucee PDF Extension source](https://github.com/lucee/extension-pdf/blob/master/source/java/src/org/lucee/extension/pdf/xhtmlrenderer/FSPDFDocument.java) for implementation details.
 
 ## Resources
 
@@ -182,6 +192,10 @@ This occurs because Lucee's `cfdocument` does not properly embed fonts for full 
 - [ZUGFeRD Official Website](https://www.ferd-net.de/zugferd/index.html)
 
 ## Version History
+
+### v1.1.2
+- Fixed font embedding for PDF/A compliance - fonts now properly embedded using `fontdirectory` attribute
+- Updated documentation with correct font embedding instructions
 
 ### v1.1.1
 - Added `createBankDetails()` factory method for payment information
