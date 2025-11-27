@@ -66,14 +66,20 @@ var factory = getInstance('MustangFactory@cbzugferd');
 // Create an invoice
 var invoice = factory.createInvoice();
 
-// Create trade parties (name, street, ZIP, location, country)
+// Create sender trade party (name, street, ZIP, location, country)
 var sender = factory.createTradeParty("My Company", "Main Street 1", "12345", "Berlin", "DE");
 sender.addVATID("DE123456789");
 
+// Add bank details to sender
+var bankDetails = factory.createBankDetails("DE89370400440532013000", "COBADEFFXXX");
+bankDetails.setAccountName("My Company");
+sender.addBankDetails(bankDetails);
+
+// Create recipient trade party
 var recipient = factory.createTradeParty("Customer Inc", "Customer Road 5", "54321", "Munich", "DE");
 recipient.addVATID("DE987654321");
 
-// Set invoice details
+// Set invoice dates and parties
 invoice.setDueDate(now())
     .setIssueDate(now())
     .setDeliveryDate(now())
@@ -83,6 +89,10 @@ invoice.setDueDate(now())
     .setReferenceNumber("INV-2024-001")
     .setNumber("2024-001");
 
+// Add regulatory notes (Geschäftsführer, Handelsregister)
+invoice.addRegulatoryNote("Geschäftsführer: Max Mustermann");
+invoice.addRegulatoryNote("Handelsregister: Amtsgericht Berlin HRB 12345");
+
 // Create product (description, name, unit, VATPercent)
 var product = factory.createProduct("Widget Description", "Widget", "C62", 19);
 
@@ -91,13 +101,17 @@ var item = factory.createItem(product, 99.99, 2);
 invoice.addItem(item);
 
 // Generate your PDF (e.g., with cfdocument)
-cfdocument(format="PDF" name="pdfContent") {
+cfdocument(format="PDF" fontembed="true" fontdirectory="/System/Library/Fonts/Supplemental/" type="modern" name="pdfContent") {
+    writeOutput('<html><head><style>body { font-family: Arial, sans-serif; }</style></head><body>');
     writeOutput('<h1>Invoice</h1>...');
+    writeOutput('</body></html>');
 }
 fileWrite("/path/to/invoice.pdf", pdfContent);
 
 // Create ZUGFeRD PDF with embedded XML
+// disableAutoClose(true) keeps PDF in memory for potential further processing
 var exporter = factory.createExporterFromA1()
+    .disableAutoClose(true)
     .ignorePDFAErrors()  // Allows regular PDF input (not just PDF/A-1)
     .load("/path/to/invoice.pdf")
     .setProducer("My Application")
@@ -105,6 +119,7 @@ var exporter = factory.createExporterFromA1()
 
 exporter.setTransaction(invoice);
 exporter.export("/path/to/zugferd-invoice.pdf");
+exporter.close();
 ```
 
 ### Factory Methods
@@ -121,6 +136,12 @@ The `MustangFactory` provides these methods:
 | `createContact()` | name, phone, email | Creates a contact person |
 | `createExporterFromA1()` | none | Creates exporter for PDF/A-1 input (use with `.ignorePDFAErrors()` for regular PDF) |
 | `createExporterFromA3()` | none | Creates exporter for PDF/A-3 input |
+
+### Bank Details Methods
+
+After creating bank details, you can set additional properties:
+
+- `.setAccountName(string)` - Set the account holder name
 
 ### Trade Party Methods
 
@@ -144,6 +165,18 @@ After creating a trade party, you can chain these methods:
 - `.setOwnTaxID(string)` - Your tax ID
 - `.setReferenceNumber(string)` - Reference number
 - `.addItem(item)` - Add line item
+- `.addRegulatoryNote(string)` - Add regulatory note (e.g., Geschäftsführer, Handelsregister)
+
+### Exporter Methods
+
+- `.ignorePDFAErrors()` - Allow regular PDF input (not just PDF/A-1)
+- `.disableAutoClose(true)` - Keep PDF in memory for further processing
+- `.load(string)` - Load source PDF file
+- `.setProducer(string)` - Set PDF producer metadata
+- `.setCreator(string)` - Set PDF creator metadata
+- `.setTransaction(invoice)` - Set the invoice transaction
+- `.export(string)` - Export to ZUGFeRD PDF at specified path
+- `.close()` - Close the exporter (required when using disableAutoClose)
 
 ## Example Handler
 
