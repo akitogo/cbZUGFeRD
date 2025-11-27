@@ -39,4 +39,11 @@ component singleton {
     function createExporterFromA1() {
         return ExporterFromA1Class.init();
     }
+
+    /**
+     * Get the path to the bundled sRGB ICC profile
+     */
+    function getICCProfilePath() {
+        return expandPath("/modules/cbzugferd/config/sRGB2014.icc");
+    }
 }

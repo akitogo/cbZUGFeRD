@@ -10,6 +10,11 @@ component {
         var sourcePDF = expandPath('/modules/cbZUGFeRD/tmp/test.pdf');
         var outputFolder = expandPath('/modules/cbZUGFeRD/tmp/');
 
+        // Delete existing test.pdf if it exists
+        if (fileExists(sourcePDF)) {
+            fileDelete(sourcePDF);
+        }
+
         // Get the factory (singleton that handles all Java object creation)
         var factory = getInstance('MustangFactory@cbzugferd');
 
@@ -61,13 +66,16 @@ component {
 
         // Use ZUGFeRDExporterFromA1 with ignorePDFAErrors to handle regular PDF
         // This converts the PDF and embeds the ZUGFeRD XML data
+        // disableAutoClose(true) keeps PDF in memory for potential further processing
         var iZe = factory.createExporterFromA1()
+            .disableAutoClose(true)
             .ignorePDFAErrors()
             .load(sourcePDF)
             .setProducer("My Application")
             .setCreator("cbZugferd");
         iZe.setTransaction(invoice);
         iZe.export(outputFolder & "final.pdf");
+        iZe.close();
 
         // Validate your generated ZUGFeRD invoice here:
         // https://www.portinvoice.com/

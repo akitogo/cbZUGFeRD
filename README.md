@@ -1,4 +1,4 @@
-# cbZUGFeRD v1.1.2
+# cbZUGFeRD v1.1.3
 
 A ColdBox module for generating ZUGFeRD/XRechnung compliant invoices in ColdFusion (CFML).
 
@@ -35,7 +35,7 @@ ZUGFeRD (Zentraler User Guide des Forums elektronische Rechnung Deutschland) is 
 ## Dependencies
 
 - **cbjavaloader**: For loading the Mustang Project Java library
-- **Mustang Project library** (library-2.13.0-shaded.jar): The core ZUGFeRD generation library
+- **Mustang Project library** (library-2.20.0-shaded.jar): The core ZUGFeRD generation library (Java 17+ compatible)
 
 ## Configuration
 
@@ -192,6 +192,10 @@ See [Lucee PDF Extension source](https://github.com/lucee/extension-pdf/blob/mas
 - [ZUGFeRD Official Website](https://www.ferd-net.de/zugferd/index.html)
 
 ## Version History
+
+### v1.1.3
+- Updated Mustang library from 2.13.0 to 2.20.0 for Java 17+ compatibility
+- Fixes Icc profile error
 
 ### v1.1.2
 - Fixed font embedding for PDF/A compliance - fonts now properly embedded using `fontdirectory` attribute
