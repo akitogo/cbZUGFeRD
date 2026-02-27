@@ -101,8 +101,9 @@ var item = factory.createItem(product, 99.99, 2);
 invoice.addItem(item);
 
 // Generate your PDF (e.g., with cfdocument)
-cfdocument(format="PDF" fontembed="true" fontdirectory="/System/Library/Fonts/Supplemental/" type="modern" name="pdfContent") {
-    writeOutput('<html><head><style>body { font-family: Arial, sans-serif; }</style></head><body>');
+// Use @font-face in CSS to embed fonts — see "Font Embedding" section below
+cfdocument(format="PDF" fontembed="true" type="modern" name="pdfContent") {
+    writeOutput('<html><head><style>body { font-family: "Nimbus Sans", Arial, Helvetica, sans-serif; }</style></head><body>');
     writeOutput('<h1>Invoice</h1>...');
     writeOutput('</body></html>');
 }
@@ -192,29 +193,63 @@ You can validate your generated ZUGFeRD invoices using these online validators:
 
 ### Font Embedding for PDF/A Compliance
 
-To properly embed fonts in PDFs generated with `cfdocument`, you must:
+PDF/A-3 requires all fonts to be embedded in the PDF. Lucee's `cfdocument` with `type="modern"` uses the Flying Saucer renderer, which needs explicit `@font-face` declarations to find and embed fonts.
 
-1. Use `type="modern"` (Flying Saucer engine)
-2. Set `fontembed="true"`
-3. Specify `fontdirectory` pointing to a folder containing TTF font files
-4. Reference the font by its exact name in CSS
+#### Using `@font-face` with Flying Saucer
 
-**Example:**
-```cfc
-cfdocument(
-    format="PDF"
-    fontembed="true"
-    fontdirectory="/System/Library/Fonts/Supplemental/"
-    type="modern"
-    name="pdfContent"
-) {
-    writeOutput('<html><head>');
-    writeOutput('<style>body { font-family: Arial, sans-serif; }</style>');
-    writeOutput('</head><body>...');
+Add `@font-face` declarations with Flying Saucer-specific properties in your CSS to register and embed fonts. **Nimbus Sans** is recommended as a metric-compatible Helvetica replacement:
+
+```css
+@font-face {
+  font-family: 'Nimbus Sans';
+  src: url('file:///usr/share/fonts/opentype/urw-base35/NimbusSans-Regular.otf');
+  font-weight: normal;
+  font-style: normal;
+  -fs-pdf-font-embed: embed;
+  -fs-pdf-font-encoding: Identity-H;
+}
+@font-face {
+  font-family: 'Nimbus Sans';
+  src: url('file:///usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf');
+  font-weight: bold;
+  font-style: normal;
+  -fs-pdf-font-embed: embed;
+  -fs-pdf-font-encoding: Identity-H;
 }
 ```
 
-**Note:** On macOS, TTF fonts are typically located in `/System/Library/Fonts/Supplemental/`. On Linux/Windows servers, adjust the path accordingly (e.g., `/usr/share/fonts/truetype/` on Ubuntu).
+Then reference it in your HTML:
+```css
+body { font-family: 'Nimbus Sans', Arial, Helvetica, sans-serif; }
+```
+
+Key points:
+- **`-fs-pdf-font-embed: embed`** — Flying Saucer-specific CSS property that forces font embedding
+- **`-fs-pdf-font-encoding: Identity-H`** — Unicode encoding for proper character support
+- **`file:///` URLs** — absolute filesystem paths to the font files on the server
+- **Nimbus Sans** is used instead of DejaVu Sans because it matches Helvetica metrics, avoiding text overflow issues
+- The `cfdocument` tag must include `fontembed="true"`
+
+#### Font availability
+
+Nimbus Sans is part of the `fonts-urw-base35` package, which is pre-installed on Debian/Ubuntu systems:
+
+- Nimbus Sans (Regular, Bold, Italic, Bold Italic) — `/usr/share/fonts/opentype/urw-base35/`
+- DejaVu Sans (Regular, Bold, Oblique, Bold Oblique) — `/usr/share/fonts/truetype/dejavu/` (wider than Helvetica, avoid for Helvetica replacement)
+
+If Nimbus Sans is not available, install it with:
+```bash
+apt-get install fonts-urw-base35
+```
+
+#### Troubleshooting
+
+If fonts are not embedded, verify:
+1. The font files exist at the specified paths on the server (`fc-list | grep -i nimbus`)
+2. The `@font-face` declarations use `file:///` protocol
+3. The `-fs-pdf-font-embed: embed` property is present
+4. `cfdocument` has `fontembed="true"`
+
 
 See [Lucee PDF Extension source](https://github.com/lucee/extension-pdf/blob/master/source/java/src/org/lucee/extension/pdf/xhtmlrenderer/FSPDFDocument.java) for implementation details.
 
@@ -231,7 +266,8 @@ See [Lucee PDF Extension source](https://github.com/lucee/extension-pdf/blob/mas
 - Fixes Icc profile error
 
 ### v1.1.2
-- Fixed font embedding for PDF/A compliance - fonts now properly embedded using `fontdirectory` attribute
+- Fixed font embedding for PDF/A compliance using `@font-face` with Flying Saucer-specific properties (`-fs-pdf-font-embed`, `-fs-pdf-font-encoding`)
+- Switched to Nimbus Sans (metric-compatible Helvetica clone) to avoid text overflow from wider fonts like DejaVu Sans
 - Updated documentation with correct font embedding instructions
 
 ### v1.1.1
