@@ -253,6 +253,38 @@ If fonts are not embedded, verify:
 
 See [Lucee PDF Extension source](https://github.com/lucee/extension-pdf/blob/master/source/java/src/org/lucee/extension/pdf/xhtmlrenderer/FSPDFDocument.java) for implementation details.
 
+### ICC Color Profile (PDF/A OutputIntent)
+
+PDF/A requires every file to carry an *OutputIntent* — an embedded ICC color profile that defines exactly how the document's colors should be rendered, so it looks identical on any device, independent of the viewer. When Mustang converts your PDF to PDF/A-3, it embeds the standard **sRGB2014** profile from the ICC (International Color Consortium) as that OutputIntent.
+
+#### The "ICC profile error" under Lucee
+
+Mustang ships `sRGB2014.icc` *inside* its jar and loads it via the **thread context classloader**. Because this module loads Mustang through JavaLoader, the running thread's context classloader is Lucee's — which cannot see resources inside JavaLoader's jars. The resource lookup fails and the export throws an ICC profile error.
+
+**Fix:** temporarily swap the thread's context classloader to JavaLoader's classloader around the export, and restore it in a `finally`:
+
+```cfc
+var javaLoader = getInstance("loader@cbjavaloader");
+var currentThread = createObject("java", "java.lang.Thread").currentThread();
+var originalClassLoader = currentThread.getContextClassLoader();
+currentThread.setContextClassLoader( javaLoader.getURLClassLoader() );
+
+try {
+    var exporter = factory.createExporterFromA1()
+        .setProducer("My Application")
+        .setCreator("cbZUGFeRD")
+        .ignorePDFAErrors()
+        .load(sourcePdf);
+
+    exporter.setTransaction(invoice);
+    exporter.export(destinationPdf);
+} finally {
+    currentThread.setContextClassLoader( originalClassLoader );
+}
+```
+
+The module also bundles a filesystem copy of the profile at `config/sRGB2014.icc` (license in `config/LICENSE-sRGB2014.txt`), available via `factory.getICCProfilePath()`. This was an earlier workaround that bypassed the classpath lookup; with the classloader swap above it is no longer needed and is kept for reference only.
+
 ## Resources
 
 - [Mustang Project](https://www.mustangproject.org/)
