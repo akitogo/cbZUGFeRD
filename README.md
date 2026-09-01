@@ -37,7 +37,7 @@ ZUGFeRD (Zentraler User Guide des Forums elektronische Rechnung Deutschland) is 
 ## Dependencies
 
 - **cbjavaloader**: For loading the Mustang Project Java library
-- **Mustang Project library** (library-2.25.0-shaded.jar): The core ZUGFeRD generation library (Java 17+ compatible)
+- **Mustang Project library** (library-2.26.0-shaded.jar): The core ZUGFeRD generation library (Java 17+ compatible)
 
 ## Configuration
 
@@ -307,6 +307,7 @@ The module also bundles a filesystem copy of the profile at `config/sRGB2014.icc
 ## Version History
 
 ### v1.2.0
+- Updated Mustang library from 2.25.0 to 2.26.0 — seller tax representative (BG-11), TaxCurrencyCode (BT-6), EN16931 Schematron 1.3.16, fixed fluent API of `Charge`/`Allowance` (#1225); see the [Mustang release notes](https://github.com/ZUGFeRD/mustangproject/releases/tag/core-2.26.0)
 - Added `createAllowance(amount, VATPercent, reason)` factory method — document-level `SpecifiedTradeAllowanceCharge` with tax rate, category `S` and reason (BR-33), for discounts that cannot be expressed on a line item
 - `createContact()` now builds the contact via setters: empty phone/email no longer produce empty `<ram:CompleteNumber/>` / `<ram:URIID/>` elements that EN16931 validators reject; phone and email are optional
 - Documented buyer contact (BT-56) and allowance usage
