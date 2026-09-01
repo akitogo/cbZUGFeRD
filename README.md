@@ -1,4 +1,4 @@
-# cbZUGFeRD v1.1.4
+# cbZUGFeRD v1.2.0
 
 A ColdBox module for generating ZUGFeRD/XRechnung compliant invoices in ColdFusion (CFML).
 
@@ -19,6 +19,8 @@ ZUGFeRD (Zentraler User Guide des Forums elektronische Rechnung Deutschland) is 
   - VAT/tax rates
   - Bank details
   - Regulatory notes
+  - Contact persons (BT-41 / BT-56 `DefinedTradeContact`)
+  - Document-level allowances (discounts, `SpecifiedTradeAllowanceCharge`)
 
 ## Requirements
 
@@ -100,6 +102,14 @@ var product = factory.createProduct("Widget Description", "Widget", "C62", 19);
 var item = factory.createItem(product, 99.99, 2);
 invoice.addItem(item);
 
+// Optional: buyer contact person (BT-56) — phone/email may be omitted
+recipient.setContact(factory.createContact("Erika Muster"));
+
+// Optional: document-level discount (amount, VATPercent, reason).
+// Reduces TaxBasisTotalAmount and the VAT of the given rate; the reason is
+// mandatory for EN16931 (BR-33).
+invoice.addAllowance(factory.createAllowance(30.00, 19, "Rabatt"));
+
 // Generate your PDF (e.g., with cfdocument)
 // Use @font-face in CSS to embed fonts — see "Font Embedding" section below
 cfdocument(format="PDF" fontembed="true" type="modern" name="pdfContent") {
@@ -134,7 +144,8 @@ The `MustangFactory` provides these methods:
 | `createProduct()` | description, name, unit, VATPercent | Creates a product |
 | `createItem()` | product, price, quantity | Creates a line item |
 | `createBankDetails()` | IBAN, BIC | Creates bank details for payment |
-| `createContact()` | name, phone, email | Creates a contact person |
+| `createContact()` | name, [phone], [email] | Creates a contact person; empty phone/email are omitted from the XML |
+| `createAllowance()` | amount, VATPercent, reason | Creates a document-level allowance (discount) for `invoice.addAllowance()` |
 | `createExporterFromA1()` | none | Creates exporter for PDF/A-1 input (use with `.ignorePDFAErrors()` for regular PDF) |
 | `createExporterFromA3()` | none | Creates exporter for PDF/A-3 input |
 
@@ -166,6 +177,8 @@ After creating a trade party, you can chain these methods:
 - `.setOwnTaxID(string)` - Your tax ID
 - `.setReferenceNumber(string)` - Reference number
 - `.addItem(item)` - Add line item
+- `.addAllowance(allowance)` - Add document-level allowance (discount) from `createAllowance()`
+- `.addCharge(charge)` - Add document-level charge (surcharge)
 - `.addRegulatoryNote(string)` - Add regulatory note (e.g., Geschäftsführer, Handelsregister)
 
 ### Exporter Methods
@@ -292,6 +305,11 @@ The module also bundles a filesystem copy of the profile at `config/sRGB2014.icc
 - [ZUGFeRD Official Website](https://www.ferd-net.de/zugferd/index.html)
 
 ## Version History
+
+### v1.2.0
+- Added `createAllowance(amount, VATPercent, reason)` factory method — document-level `SpecifiedTradeAllowanceCharge` with tax rate, category `S` and reason (BR-33), for discounts that cannot be expressed on a line item
+- `createContact()` now builds the contact via setters: empty phone/email no longer produce empty `<ram:CompleteNumber/>` / `<ram:URIID/>` elements that EN16931 validators reject; phone and email are optional
+- Documented buyer contact (BT-56) and allowance usage
 
 ### v1.1.4
 - Updated Mustang library from 2.20.0 to 2.25.0
